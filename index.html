@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Geología VR Tour</title>
+    
+    <!-- Favicon para evitar error 404 -->
+    <link rel="icon" href="data:,">
+    
+    <!-- PWA Meta tags -->
+    <meta name="description" content="Tour virtual de geología en realidad virtual">
+    <meta name="theme-color" content="#000000">
+    
+    <!-- Enlace a la hoja de estilos externa -->
+    <link rel="stylesheet" href="./styles/main.css">
+    
+    <!-- Three.js y WebXR -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.137.0/build/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r137/three.min.js"></script>
+    <script type="module">
+        import { VRButton } from 'https://cdn.skypack.dev/three@0.137.0/examples/jsm/webxr/VRButton.js';
+        window.VRButton = VRButton;
+    </script>
+    
+    <!-- Tus archivos existentes -->
+    <script src="js/scenes.js"></script>
+    <script src="js/connections.js"></script>
+    <script src="js/utils.js"></script>
+    
+    <style>
+        /* Estilos específicos para VR */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        
+        #vrButton {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        
+        #navigationControlsLeft,
+        #navigationControlsRight {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        #navigationControlsLeft {
+            left: 20px;
+        }
+        
+        #navigationControlsRight {
+            right: 20px;
+        }
+        
+        /* Ocultar controles en VR */
+        @media (display-mode: standalone) {
+            #navigationControlsLeft,
+            #navigationControlsRight {
+                display: none;
+            }
+        }
+        
+        /* Loading screen */
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            z-index: 1000;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+        <div>Cargando Tour Virtual de Geología...</div>
+    </div>
+    
+    <div id="info">Geología VR Tour</div>
+    <div id="navigationControlsLeft">◀ Anterior</div>
+    <div id="navigationControlsRight">Siguiente ▶</div>
+    
+    <!-- Contenedor para el botón VR -->
+    <div id="vrButton"></div>
+
+    <script>
+        let vrSupported = false;
+        
+        // Función mejorada de inicialización
+        function initTourVirtualVR() {
+            // Tu función original
+            initTourVirtual();
+            
+            // Configurar WebXR después de un pequeño delay para asegurar que el renderer esté listo
+            setTimeout(setupWebXR, 500);
+        }
+        
+        function setupWebXR() {
+            // Obtener el renderer de tu código existente
+            if (typeof renderer !== 'undefined' && renderer) {
+                // Habilitar WebXR
+                renderer.xr.enabled = true;
+                
+                // Crear botón VR manualmente (sin usar VRButton)
+                const vrButton = document.createElement('button');
+                vrButton.textContent = 'ENTER VR';
+                vrButton.style.cssText = `
+                    position: absolute;
+                    bottom: 20px;
+                    right: 20px;
+                    background: #1483ff;
+                    border: none;
+                    padding: 12px 20px;
+                    color: white;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    z-index: 100;
+                `;
+                
+                vrButton.onclick = function() {
+                    if (navigator.xr && renderer.xr) {
+                        navigator.xr.requestSession('immersive-vr').then(function(session) {
+                            renderer.xr.setSession(session);
+                            vrButton.textContent = 'EXIT VR';
+                        }).catch(function(err) {
+                            console.log('VR failed:', err);
+                        });
+                    }
+                };
+                
+                document.getElementById('vrButton').appendChild(vrButton);
+                
+                // Reemplazar tu animate() existente con el loop de VR
+                function vrAnimate() {
+                    // Tu función update() existente
+                    update();
+                }
+                
+                // Configurar loop de animación para VR
+                renderer.setAnimationLoop(vrAnimate);
+                
+                vrSupported = true;
+                console.log('WebXR configurado correctamente para tour de geología');
+            } else {
+                console.log('Renderer no disponible aún, reintentando...');
+                setTimeout(setupWebXR, 1000);
+            }
+        }
+        
+        // Optimizaciones para Quest
+        function optimizeForQuest() {
+            // Reducir calidad de texturas si es necesario
+            if (renderer) {
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+                renderer.antialias = false; // Mejor performance en Quest
+            }
+        }
+        
+        // Detectar si está en VR
+        function onVRSessionStart() {
+            console.log('Sesión VR iniciada');
+            // Ocultar controles UI
+            document.getElementById('navigationControlsLeft').classList.add('hidden');
+            document.getElementById('navigationControlsRight').classList.add('hidden');
+            document.getElementById('info').style.display = 'none';
+        }
+        
+        function onVRSessionEnd() {
+            console.log('Sesión VR terminada');
+            // Mostrar controles UI
+            document.getElementById('navigationControlsLeft').classList.remove('hidden');
+            document.getElementById('navigationControlsRight').classList.remove('hidden');
+            document.getElementById('info').style.display = 'block';
+        }
+        
+        // Instalación como PWA
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            showInstallButton();
+        });
+        
+        function showInstallButton() {
+            const installBtn = document.createElement('button');
+            installBtn.textContent = 'Instalar App';
+            installBtn.style.cssText = `
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                background: #4CAF50;
+                border: none;
+                padding: 10px 15px;
+                color: white;
+                border-radius: 5px;
+                cursor: pointer;
+                z-index: 100;
+            `;
+            installBtn.onclick = () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((result) => {
+                        if (result.outcome === 'accepted') {
+                            console.log('PWA instalada');
+                        }
+                        deferredPrompt = null;
+                        installBtn.remove();
+                    });
+                }
+            };
+            document.body.appendChild(installBtn);
+        }
+        
+        // Inicialización principal
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ocultar loading screen después de un momento
+            setTimeout(() => {
+                document.getElementById('loadingScreen').classList.add('hidden');
+            }, 1000);
+            
+            // Inicializar tour
+            initTourVirtualVR();
+            
+            // Optimizar para Quest
+            setTimeout(optimizeForQuest, 2000);
+            
+            // Event listeners para VR
+            if (navigator.xr) {
+                navigator.xr.addEventListener('sessionstart', onVRSessionStart);
+                navigator.xr.addEventListener('sessionend', onVRSessionEnd);
+            }
+        });
+        
+        // Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+</body>
+
+</html>

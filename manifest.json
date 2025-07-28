@@ -1,0 +1,13 @@
+{
+    "name": "Tour Virtual de Geología",
+    "short_name": "Geología VR",
+    "description": "Experiencia de realidad virtual para explorar formaciones geológicas",
+    "start_url": "/",
+    "display": "fullscreen",
+    "orientation": "landscape",
+    "background_color": "#000000",
+    "theme_color": "#1483ff",
+    "scope": "/",
+    "categories": ["education", "science"],
+    "lang": "es"
+  }
