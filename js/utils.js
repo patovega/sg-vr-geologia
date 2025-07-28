@@ -215,104 +215,140 @@ function update() {
 }
 
 function loadScene(sceneId, onLoadedCallback) {
-    console.log(`loadScene called for: ${sceneId}`);
+    console.log(`🎬 loadScene called for: ${sceneId}`);
+    console.log(`📍 Current scene before change: ${currentSceneId}`);
+    
     currentSceneId = sceneId;
     const sceneData = scenes.find(s => s.id === sceneId);
+    
     if (!sceneData) {
-        console.error("Scene not found:", sceneId); return;
+        console.error("❌ Scene not found:", sceneId);
+        console.log("Available scenes:", scenes.map(s => s.id));
+        return;
     }
-
+    
+    console.log(`✅ Scene data found:`, sceneData);
+    console.log(`🔍 Trying to load file: ${sceneData.filename}`);
+    
+    // Verificar que el material existe
+    if (!material) {
+        console.error("❌ Material not found! Cannot load texture.");
+        return;
+    }
+    
     // Configura opciones avanzadas para el cargador de texturas
     const loadingManager = new THREE.LoadingManager();
+    
+    loadingManager.onLoad = function() {
+        console.log("🎉 LoadingManager: All resources loaded successfully");
+    };
+    
     loadingManager.onError = function(url) {
-        console.error('Error loading texture:', url);
+        console.error('❌ LoadingManager Error loading:', url);
     };
     
     const loader = new THREE.TextureLoader(loadingManager);
     
-    // Importante: Evita la compresión y optimiza la calidad
-    function loadScene(sceneId, onLoadedCallback) {
-        console.log(`loadScene called for: ${sceneId}`);
-        currentSceneId = sceneId;
-        const sceneData = scenes.find(s => s.id === sceneId);
-        if (!sceneData) {
-            console.error("Scene not found:", sceneId); 
-            return;
-        }
+    console.log(`🚀 Starting texture load for: ${sceneData.filename}`);
     
-        // Configura opciones avanzadas para el cargador de texturas
-        const loadingManager = new THREE.LoadingManager();
-        loadingManager.onError = function(url) {
-            console.error('Error loading texture:', url);
-        };
+    loader.load(
+        sceneData.filename,
         
-        const loader = new THREE.TextureLoader(loadingManager);
-        
-        loader.load(sceneData.filename, function(texture) {
-            console.log(`Texture loaded for: ${sceneId}`);
+        // Success callback
+        function(texture) {
+            console.log(`✅ SUCCESS: Texture loaded for scene: ${sceneId}`);
+            console.log(`📏 Texture dimensions: ${texture.image ? texture.image.width + 'x' + texture.image.height : 'unknown'}`);
             
             // Optimizaciones específicas para Quest
             const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
-            texture.anisotropy = Math.min(4, maxAnisotropy); // Limitar anisotropía para mejor performance
+            texture.anisotropy = Math.min(4, maxAnisotropy);
             
-            texture.minFilter = THREE.LinearFilter;  // LinearFilter preserva mejor los detalles
+            texture.minFilter = THREE.LinearFilter;
             texture.magFilter = THREE.LinearFilter;
-            texture.generateMipmaps = false;  // Crucial para mantener la calidad original
-            
-            // Usar RGB en lugar de RGBA para ahorrar memoria si no necesitas transparencia
-            texture.format = THREE.RGBFormat; // Cambiado de RGBAFormat para mejor performance
+            texture.generateMipmaps = false;
+            texture.format = THREE.RGBAFormat;  // ← Cambio aquí
             texture.encoding = THREE.sRGBEncoding;
             
-            // Verificar tamaño de textura y advertir si es muy grande
+            // Verificar tamaño de textura
             if (texture.image) {
                 const width = texture.image.width;
                 const height = texture.image.height;
-                console.log(`Texture dimensions: ${width}x${height}`);
+                console.log(`📐 Final texture dimensions: ${width}x${height}`);
                 
                 if (width > 4096 || height > 2048) {
-                    console.warn(`⚠️  Texture ${sceneData.filename} is very large (${width}x${height}). For better Quest performance, consider resizing to max 4096x2048 or 2048x1024.`);
+                    console.warn(`⚠️ Texture ${sceneData.filename} is very large (${width}x${height}). Consider resizing for better Quest performance.`);
                 }
                 
-                // Performance tip basado en el tamaño
                 if (width > 8000 || height > 4000) {
-                    console.warn(`🚨 Texture is extremely large! This may cause performance issues on Quest. Strongly recommend resizing.`);
-                    // Reducir anisotropía aún más para texturas muy grandes
+                    console.warn(`🚨 Texture is extremely large! This may cause performance issues on Quest.`);
                     texture.anisotropy = Math.min(2, maxAnisotropy);
                 }
             }
             
             // Aplicar la textura al material
+            console.log(`🎨 Applying texture to material...`);
+            const oldTexture = material.map;
+            
             material.map = texture;
             material.needsUpdate = true;
+            
+            // Liberar textura anterior
+            if (oldTexture && oldTexture !== texture) {
+                oldTexture.dispose();
+                console.log(`🗑️ Old texture disposed`);
+            }
+            
+            // Forzar renderizado
+            renderer.render(scene, camera);
+            console.log(`🖼️ Material updated and rendered for scene: ${sceneId}`);
             
             // Actualizar interfaz y elementos
             updateInfoText();
             createHotspotsForCurrentScene();
-    
+            console.log(`🔄 Interface updated for scene: ${sceneId}`);
+            
             if (onLoadedCallback) {
-                console.log(`Executing onLoadedCallback for scene: ${sceneId}`);
+                console.log(`🎯 Executing onLoadedCallback for scene: ${sceneId}`);
                 onLoadedCallback();
             }
-        }, 
+            
+            console.log(`🎉 Scene loading completed successfully: ${sceneId}`);
+        },
         
-        // Progress callback (opcional - para mostrar progreso de carga)
+        // Progress callback
         function(progress) {
             if (progress.lengthComputable) {
                 const percentComplete = (progress.loaded / progress.total) * 100;
-                console.log(`Loading ${sceneId}: ${Math.round(percentComplete)}%`);
+                console.log(`📥 Loading ${sceneId}: ${Math.round(percentComplete)}% (${progress.loaded}/${progress.total} bytes)`);
+            } else {
+                console.log(`📥 Loading ${sceneId}: ${progress.loaded} bytes loaded`);
             }
         },
         
         // Error callback
         function(error) {
-            console.error(`Failed to load texture for scene ${sceneId}:`, error);
-            // Opcional: mostrar mensaje de error al usuario
+            console.error(`❌ FAILED to load texture for scene ${sceneId}:`, error);
+            console.error(`❌ File path attempted: ${sceneData.filename}`);
+            console.error(`❌ Error details:`, {
+                message: error.message,
+                type: error.constructor.name,
+                stack: error.stack
+            });
+            
+            // Mostrar mensaje de error al usuario
             const infoDiv = document.getElementById('info');
             if (infoDiv) {
-                infoDiv.textContent = `Error loading scene: ${sceneId}`;
+                infoDiv.textContent = `❌ Error loading scene: ${sceneId}`;
+                infoDiv.style.color = 'red';
+                
+                // Restaurar después de 3 segundos
+                setTimeout(() => {
+                    updateInfoText();
+                    infoDiv.style.color = 'white';
+                }, 3000);
             }
-        });
-    }
+        }
+    );
 }
 
 function createHotspotsForCurrentScene() {
