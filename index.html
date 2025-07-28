@@ -124,6 +124,37 @@
     <script>
         let vrSupported = false;
         
+        // Función de debug visual para Quest
+        function showDebugMessage(message, type = 'info') {
+            const debugDiv = document.createElement('div');
+            debugDiv.style.cssText = `
+                position: fixed;
+                top: 50px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'error' ? '#ff4444' : type === 'success' ? '#44ff44' : '#4444ff'};
+                color: white;
+                padding: 15px 25px;
+                border-radius: 8px;
+                font-size: 18px;
+                font-weight: bold;
+                z-index: 10001;
+                max-width: 80%;
+                text-align: center;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            `;
+            debugDiv.textContent = message;
+            document.body.appendChild(debugDiv);
+            
+            console.log(`DEBUG: ${message}`);
+            
+            setTimeout(() => {
+                if (debugDiv.parentNode) {
+                    debugDiv.remove();
+                }
+            }, 4000);
+        }
+        
         // Funciones de precarga y loading personalizado
         function showCustomLoadingScreen() {
             const loadingOverlay = document.createElement('div');
@@ -178,7 +209,16 @@
         }
 
         function preloadAllTextures() {
-            return new Promise((resolve) => {
+            return new Promise((resolve, reject) => {
+                if (!scenes || scenes.length === 0) {
+                    const error = 'No hay escenas definidas';
+                    showDebugMessage(`❌ ${error}`, 'error');
+                    reject(new Error(error));
+                    return;
+                }
+                
+                showDebugMessage(`Precargando ${scenes.length} escenas...`);
+                
                 const loadingOverlay = showCustomLoadingScreen();
                 const loader = new THREE.TextureLoader();
                 const preloadedTextures = {};
@@ -205,13 +245,18 @@
                         if (loadedCount === totalCount) {
                             updateLoadingProgress('¡Todas las escenas cargadas!', 100);
                             window.preloadedTextures = preloadedTextures;
+                            
                             setTimeout(() => {
                                 hideCustomLoadingScreen();
+                                showDebugMessage('✅ Precarga completada exitosamente!', 'success');
                                 resolve();
                             }, 1000);
                         }
                     }, undefined, function(error) {
-                        console.error(`Error loading ${scene.filename}:`, error);
+                        const errorMsg = `Error cargando ${scene.filename}`;
+                        showDebugMessage(errorMsg, 'error');
+                        console.error(errorMsg, error);
+                        
                         loadedCount++;
                         const progress = (loadedCount / totalCount) * 100;
                         updateLoadingProgress(`Error en escena ${loadedCount}/${totalCount}...`, progress);
@@ -219,7 +264,7 @@
                         if (loadedCount === totalCount) {
                             setTimeout(() => {
                                 hideCustomLoadingScreen();
-                                resolve();
+                                resolve(); // Continuar aunque haya errores
                             }, 1000);
                         }
                     });
@@ -260,28 +305,45 @@
                 `;
                 
                 vrButton.onclick = function() {
-                    if (navigator.xr && renderer.xr) {
-                        // PRIMERO: Precargar todas las texturas
-                        preloadAllTextures().then(() => {
-                            console.log('✅ Todas las texturas precargadas, ahora iniciando VR...');
-                            
-                            // SEGUNDO: Solo después de precargar, iniciar VR
-                            navigator.xr.requestSession('immersive-vr').then(function(session) {
-                                renderer.xr.setSession(session);
-                                vrButton.textContent = 'EXIT VR';
-                                
-                                session.addEventListener('end', function() {
-                                    vrButton.textContent = 'ENTER VR';
-                                });
-                            }).catch(function(err) {
-                                console.log('VR failed:', err);
-                            });
-                        }).catch(function(err) {
-                            console.log('Preload failed:', err);
-                        });
+                    showDebugMessage('🔥 Botón VR presionado');
+                    
+                    if (!navigator.xr) {
+                        showDebugMessage('❌ navigator.xr no disponible', 'error');
+                        return;
                     }
+                    
+                    if (!renderer.xr) {
+                        showDebugMessage('❌ renderer.xr no disponible', 'error');
+                        return;
+                    }
+                    
+                    showDebugMessage('✅ WebXR disponible, iniciando precarga...');
+                    
+                    preloadAllTextures()
+                        .then(() => {
+                            showDebugMessage('✅ Precarga completa! Solicitando VR...', 'success');
+                            
+                            return navigator.xr.requestSession('immersive-vr');
+                        })
+                        .then(function(session) {
+                            showDebugMessage('✅ Sesión VR creada! Configurando...', 'success');
+                            
+                            renderer.xr.setSession(session);
+                            vrButton.textContent = 'EXIT VR';
+                            
+                            session.addEventListener('end', function() {
+                                vrButton.textContent = 'ENTER VR';
+                                showDebugMessage('VR terminado');
+                            });
+                            
+                            showDebugMessage('🎉 ¡Entrando a VR!', 'success');
+                        })
+                        .catch(function(error) {
+                            showDebugMessage(`❌ Error VR: ${error.message}`, 'error');
+                            console.error('Error completo:', error);
+                        });
                 };
-                                
+                
                 document.getElementById('vrButton').appendChild(vrButton);
                 
                 // Reemplazar tu animate() existente con el loop de VR
@@ -295,6 +357,7 @@
                 
                 vrSupported = true;
                 console.log('WebXR configurado correctamente para tour de geología');
+                showDebugMessage('WebXR configurado correctamente', 'success');
             } else {
                 console.log('Renderer no disponible aún, reintentando...');
                 setTimeout(setupWebXR, 1000);
