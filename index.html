@@ -1,210 +1,485 @@
 <!DOCTYPE html>
 <html>
-  <head>
+
+<head>
     <meta charset="utf-8">
-    <title>Tour VR 360°</title>
-    <meta name="description" content="Tour VR con 3 imágenes 360° - A-Frame">
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
-  </head>
-  <body>
-    <a-scene background="color: #000000" cursor="rayOrigin: mouse">
-      <!-- Assets -->
-      <a-assets>
-        <!-- Tus imágenes locales -->
-        <img id="sky1" src="images/1.jpg">
-        <img id="sky2" src="images/2.jpg">
-        <img id="sky3" src="images/3.jpg">
-        <img id="sky4" src="images/4.jpg">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Geología VR Tour</title>
+    
+    <!-- Favicon para evitar error 404 -->
+    <link rel="icon" href="data:,">
+    
+    <!-- PWA Meta tags -->
+    <meta name="description" content="Tour virtual de geología en realidad virtual">
+    <meta name="theme-color" content="#000000">
+    
+    <!-- Enlace a la hoja de estilos externa -->
+    <link rel="stylesheet" href="./styles/main.css">
+    
+    <!-- Three.js y WebXR -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.137.0/build/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r137/three.min.js"></script>
+    <script type="module">
+        import { VRButton } from 'https://cdn.skypack.dev/three@0.137.0/examples/jsm/webxr/VRButton.js';
+        window.VRButton = VRButton;
+    </script>
+    
+    <!-- Tus archivos existentes -->
+    <script src="js/scenes.js"></script>
+    <script src="js/connections.js"></script>
+    <script src="js/utils.js"></script>
+    
+    <style>
+        /* Estilos específicos para VR */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
         
-        <!-- Sonidos de transición (opcional) -->
-        <audio id="click-sound" src="https://cdn.aframe.io/360-image-gallery-boilerplate/audio/click.ogg"></audio>
-      </a-assets>
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        
+        #vrButton {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        
+        #navigationControlsLeft,
+        #navigationControlsRight {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        #navigationControlsLeft {
+            left: 20px;
+        }
+        
+        #navigationControlsRight {
+            right: 20px;
+        }
+        
+        /* Ocultar controles en VR */
+        @media (display-mode: standalone) {
+            #navigationControlsLeft,
+            #navigationControlsRight {
+                display: none;
+            }
+        }
+        
+        /* Loading screen */
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            z-index: 1000;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
 
-      <!-- Escena inicial -->
-      <a-sky id="image-360" radius="10" src="#sky1" 
-             animation__fade="property: components.material.material.color; type: color; from: #FFF; to: #000; dur: 300; autoplay: false"
-             animation__fadein="property: components.material.material.color; type: color; from: #000; to: #FFF; dur: 300; autoplay: false"></a-sky>
-
-      <!-- Punto de navegación 1 (va a imagen 2) -->
-      <a-sphere id="nav1" 
-                position="3 1 -4" 
-                radius="0.3" 
-                color="#FF6B6B"
-                opacity="0.8"
-                animation__mouseenter="property: scale; to: 1.3 1.3 1.3; startEvents: mouseenter; dur: 200"
-                animation__mouseleave="property: scale; to: 1 1 1; startEvents: mouseleave; dur: 200"
-                animation__click="property: rotation; to: 0 360 0; startEvents: click; dur: 1000"
-                class="clickable nav-point"
-                data-target="sky2"
-                sound="src: #click-sound; on: click">
-        <!-- Texto flotante -->
-        <a-text value="Ir a Imagen 2" 
-                position="0 0.8 0" 
-                align="center" 
-                color="#FFF" 
-                scale="2 2 2"
-                look-at="[camera]"></a-text>
-      </a-sphere>
-
-      <!-- Punto de navegación 2 (va a imagen 3) -->
-      <a-sphere id="nav2" 
-                position="-3 0.5 -3" 
-                radius="0.3" 
-                color="#4ECDC4"
-                opacity="0.8"
-                animation__mouseenter="property: scale; to: 1.3 1.3 1.3; startEvents: mouseenter; dur: 200"
-                animation__mouseleave="property: scale; to: 1 1 1; startEvents: mouseleave; dur: 200"
-                animation__click="property: rotation; to: 0 360 0; startEvents: click; dur: 1000"
-                class="clickable nav-point"
-                data-target="sky3"
-                sound="src: #click-sound; on: click">
-        <a-text value="Imagen 3" 
-                position="0 0.8 0" 
-                align="center" 
-                color="#FFF" 
-                scale="2 2 2"
-                look-at="[camera]"></a-text>
-      </a-sphere>
-
-      <!-- Punto de navegación 3 (va a imagen 4) -->
-      <a-sphere id="nav3" 
-                position="0 -1 -5" 
-                radius="0.3" 
-                color="#45B7D1"
-                opacity="0.8"
-                animation__mouseenter="property: scale; to: 1.3 1.3 1.3; startEvents: mouseenter; dur: 200"
-                animation__mouseleave="property: scale; to: 1 1 1; startEvents: mouseleave; dur: 200"
-                animation__click="property: rotation; to: 0 360 0; startEvents: click; dur: 1000"
-                class="clickable nav-point"
-                data-target="sky4"
-                sound="src: #click-sound; on: click">
-        <a-text value="Imagen 4" 
-                position="0 0.8 0" 
-                align="center" 
-                color="#FFF" 
-                scale="2 2 2"
-                look-at="[camera]"></a-text>
-      </a-sphere>
-
-      <!-- Punto de navegación 4 (vuelve a imagen 1) -->
-      <a-sphere id="nav4" 
-                position="2 -0.5 -3" 
-                radius="0.3" 
-                color="#FF9F43"
-                opacity="0.8"
-                animation__mouseenter="property: scale; to: 1.3 1.3 1.3; startEvents: mouseenter; dur: 200"
-                animation__mouseleave="property: scale; to: 1 1 1; startEvents: mouseleave; dur: 200"
-                animation__click="property: rotation; to: 0 360 0; startEvents: click; dur: 1000"
-                class="clickable nav-point"
-                data-target="sky1"
-                sound="src: #click-sound; on: click">
-        <a-text value="Volver al inicio" 
-                position="0 0.8 0" 
-                align="center" 
-                color="#FFF" 
-                scale="2 2 2"
-                look-at="[camera]"></a-text>
-      </a-sphere>
-
-      <!-- Título de la escena actual -->
-      <a-text id="scene-title" 
-              font="kelsonsans" 
-              value="Imagen 1" 
-              width="8" 
-              position="0 3 -5"
-              align="center"
-              color="#FFF"
-              animation__fadein="property: opacity; from: 0; to: 1; dur: 1000; delay: 500">
-      </a-text>
-
-      <!-- Cursor VR -->
-      <a-camera>
-        <a-cursor 
-          position="0 0 -1"
-          geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-          material="color: white; shader: flat"
-          animation__click="property: scale; startEvents: click; from: 0.1 0.1 0.1; to: 1 1 1; dur: 150"
-          animation__fusing="property: scale; startEvents: fusing; from: 1 1 1; to: 0.1 0.1 0.1; dur: 1500"
-          raycaster="objects: .clickable">
-        </a-cursor>
-      </a-camera>
-    </a-scene>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+        <div>Cargando Tour Virtual de Geología...</div>
+    </div>
+    
+    <div id="info">Geología VR Tour</div>
+    <div id="navigationControlsLeft">◀ Anterior</div>
+    <div id="navigationControlsRight">Siguiente ▶</div>
+    
+    <!-- Contenedor para el botón VR -->
+    <div id="vrButton"></div>
 
     <script>
-      // Sistema de navegación entre escenas
-      document.addEventListener('DOMContentLoaded', function() {
-        const sky = document.querySelector('#image-360');
-        const title = document.querySelector('#scene-title');
-        const navPoints = document.querySelectorAll('.nav-point');
-
-        // Configuración de escenas
-        const scenes = {
-          'sky1': {
-            title: 'Imagen 1',
-            navPoints: ['nav1', 'nav2'] // Puntos visibles en esta escena
-          },
-          'sky2': {
-            title: 'Imagen 2',
-            navPoints: ['nav2', 'nav3', 'nav4']
-          },
-          'sky3': {
-            title: 'Imagen 3',
-            navPoints: ['nav1', 'nav3', 'nav4']
-          },
-          'sky4': {
-            title: 'Imagen 4',
-            navPoints: ['nav1', 'nav2', 'nav4']
-          }
-        };
-
-        let currentScene = 'sky1';
-
-        // Función para cambiar de escena
-        function changeScene(targetSky) {
-          // Fade out
-          sky.emit('fade');
-          title.setAttribute('animation__fadeout', 'property: opacity; to: 0; dur: 300');
-          
-          setTimeout(() => {
-            // Cambiar imagen y título
-            sky.setAttribute('src', '#' + targetSky);
-            title.setAttribute('value', scenes[targetSky].title);
-            currentScene = targetSky;
+        let vrSupported = false;
+        
+        // Función de debug visual para Quest
+        function showDebugMessage(message, type = 'info') {
+            const debugDiv = document.createElement('div');
+            debugDiv.style.cssText = `
+                position: fixed;
+                top: 50px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'error' ? '#ff4444' : type === 'success' ? '#44ff44' : '#4444ff'};
+                color: white;
+                padding: 15px 25px;
+                border-radius: 8px;
+                font-size: 18px;
+                font-weight: bold;
+                z-index: 10001;
+                max-width: 80%;
+                text-align: center;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            `;
+            debugDiv.textContent = message;
+            document.body.appendChild(debugDiv);
             
-            // Actualizar visibilidad de puntos de navegación
-            updateNavigationPoints();
+            console.log(`DEBUG: ${message}`);
             
-            // Fade in
-            sky.emit('fadein');
-            title.setAttribute('animation__fadein', 'property: opacity; from: 0; to: 1; dur: 300');
-          }, 300);
+            setTimeout(() => {
+                if (debugDiv.parentNode) {
+                    debugDiv.remove();
+                }
+            }, 4000);
+        }
+        
+        // Funciones de precarga y loading personalizado
+        function showCustomLoadingScreen() {
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.id = 'vrLoadingOverlay';
+            loadingOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                color: white;
+                font-family: Arial, sans-serif;
+                font-size: 24px;
+                z-index: 10000;
+            `;
+            
+            loadingOverlay.innerHTML = `
+                <div style="text-align: center;">
+                    <h2>🥽 Iniciando experiencia VR</h2>
+                    <div id="loadingProgress">Preparando entorno virtual...</div>
+                    <div style="margin-top: 20px;">
+                        <div style="width: 300px; height: 6px; background: #333; border-radius: 3px;">
+                            <div id="loadingBar" style="width: 0%; height: 100%; background: #1483ff; border-radius: 3px; transition: width 0.3s;"></div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 16px; color: #aaa;">
+                        Tour Virtual de Geología
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(loadingOverlay);
+            return loadingOverlay;
         }
 
-        // Función para actualizar puntos de navegación
-        function updateNavigationPoints() {
-          navPoints.forEach(point => {
-            const pointId = point.id;
-            if (scenes[currentScene].navPoints.includes(pointId)) {
-              point.setAttribute('visible', true);
-              point.setAttribute('animation__appear', 'property: scale; from: 0 0 0; to: 1 1 1; dur: 500');
+        function updateLoadingProgress(message, percent) {
+            const progressText = document.getElementById('loadingProgress');
+            const progressBar = document.getElementById('loadingBar');
+            
+            if (progressText) progressText.textContent = message;
+            if (progressBar) progressBar.style.width = percent + '%';
+        }
+
+        function hideCustomLoadingScreen() {
+            const overlay = document.getElementById('vrLoadingOverlay');
+            if (overlay) overlay.remove();
+        }
+
+        function preloadAllTextures() {
+            return new Promise((resolve, reject) => {
+                if (!scenes || scenes.length === 0) {
+                    const error = 'No hay escenas definidas';
+                    showDebugMessage(`❌ ${error}`, 'error');
+                    reject(new Error(error));
+                    return;
+                }
+                
+                showDebugMessage(`Precargando ${scenes.length} escenas...`);
+                
+                const loadingOverlay = showCustomLoadingScreen();
+                const loader = new THREE.TextureLoader();
+                const preloadedTextures = {};
+                let loadedCount = 0;
+                const totalCount = scenes.length;
+                
+                updateLoadingProgress('Precargando experiencia VR...', 0);
+                
+                scenes.forEach((scene, index) => {
+                    loader.load(scene.filename, function(texture) {
+                        // Optimizar textura para Quest 3
+                        texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+                        texture.minFilter = THREE.LinearFilter;
+                        texture.magFilter = THREE.LinearFilter;
+                        texture.generateMipmaps = false;
+                        texture.encoding = THREE.sRGBEncoding;
+                        
+                        preloadedTextures[scene.id] = texture;
+                        loadedCount++;
+                        
+                        const progress = (loadedCount / totalCount) * 100;
+                        updateLoadingProgress(`Cargando escena ${loadedCount}/${totalCount}...`, progress);
+                        
+                        if (loadedCount === totalCount) {
+                            updateLoadingProgress('¡Todas las escenas cargadas!', 100);
+                            window.preloadedTextures = preloadedTextures;
+                            
+                            setTimeout(() => {
+                                hideCustomLoadingScreen();
+                                showDebugMessage('✅ Precarga completada exitosamente!', 'success');
+                                resolve();
+                            }, 1000);
+                        }
+                    }, undefined, function(error) {
+                        const errorMsg = `Error cargando ${scene.filename}`;
+                        showDebugMessage(errorMsg, 'error');
+                        console.error(errorMsg, error);
+                        
+                        loadedCount++;
+                        const progress = (loadedCount / totalCount) * 100;
+                        updateLoadingProgress(`Error en escena ${loadedCount}/${totalCount}...`, progress);
+                        
+                        if (loadedCount === totalCount) {
+                            setTimeout(() => {
+                                hideCustomLoadingScreen();
+                                resolve(); // Continuar aunque haya errores
+                            }, 1000);
+                        }
+                    });
+                });
+            });
+        }
+        
+        // Función mejorada de inicialización
+        function initTourVirtualVR() {
+            // Tu función original
+            initTourVirtual();
+            
+            // Configurar WebXR después de un pequeño delay para asegurar que el renderer esté listo
+            setTimeout(setupWebXR, 500);
+        }
+        
+        function setupWebXR() {
+            // Obtener el renderer de tu código existente
+            if (typeof renderer !== 'undefined' && renderer) {
+                // Habilitar WebXR
+                renderer.xr.enabled = true;
+                
+                // Crear botón VR manualmente (sin usar VRButton)
+                const vrButton = document.createElement('button');
+                vrButton.textContent = 'ENTER VR';
+                vrButton.style.cssText = `
+                    position: absolute;
+                    bottom: 20px;
+                    right: 20px;
+                    background: #1483ff;
+                    border: none;
+                    padding: 12px 20px;
+                    color: white;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    z-index: 100;
+                `;
+                
+                vrButton.onclick = function() {
+                    showDebugMessage('🔥 Botón VR presionado');
+                    
+                    if (!navigator.xr) {
+                        showDebugMessage('❌ navigator.xr no disponible', 'error');
+                        return;
+                    }
+                    
+                    if (!renderer.xr) {
+                        showDebugMessage('❌ renderer.xr no disponible', 'error');
+                        return;
+                    }
+                    
+                    showDebugMessage('✅ WebXR disponible, iniciando precarga...');
+                    
+                    preloadAllTextures()
+                        .then(() => {
+                            showDebugMessage('✅ Precarga completa! Solicitando VR...', 'success');
+                            
+                            return navigator.xr.requestSession('immersive-vr');
+                        })
+                        .then(function(session) {
+                            showDebugMessage('✅ Sesión VR creada! Configurando...', 'success');
+                            
+                            renderer.xr.setSession(session);
+                            vrButton.textContent = 'EXIT VR';
+                            
+                            // CRÍTICO: Configurar el loop de renderizado VR
+                            function vrRenderLoop() {
+                                // Tu función update() que ya tienes
+                                if (typeof update === 'function') {
+                                    update();
+                                }
+                                // Renderizar la escena
+                                renderer.render(scene, camera);
+                            }
+                            
+                            // Establecer el loop de animación VR
+                            renderer.setAnimationLoop(vrRenderLoop);
+                            
+                            showDebugMessage('🎉 Loop VR configurado!', 'success');
+                            
+                            session.addEventListener('end', function() {
+                                vrButton.textContent = 'ENTER VR';
+                                showDebugMessage('VR terminado');
+                                
+                                // Restaurar el loop normal cuando salga de VR
+                                renderer.setAnimationLoop(null);
+                                animate(); // Reanudar loop normal
+                            });
+                            
+                            showDebugMessage('🎉 ¡VR completamente configurado!', 'success');
+                        })
+                        .catch(function(error) {
+                            showDebugMessage(`❌ Error VR: ${error.message}`, 'error');
+                            console.error('Error completo:', error);
+                        });
+                };
+                document.getElementById('vrButton').appendChild(vrButton);
+                
+                // Reemplazar tu animate() existente con el loop de VR
+                function vrAnimate() {
+                    // Tu función update() existente
+                    update();
+                }
+                
+                // Configurar loop de animación para VR
+                //renderer.setAnimationLoop(vrAnimate);
+                
+                vrSupported = true;
+                console.log('WebXR configurado correctamente para tour de geología');
+                showDebugMessage('WebXR configurado correctamente', 'success');
             } else {
-              point.setAttribute('visible', false);
+                console.log('Renderer no disponible aún, reintentando...');
+                setTimeout(setupWebXR, 1000);
             }
-          });
         }
-
-        // Event listeners para navegación
-        navPoints.forEach(point => {
-          point.addEventListener('click', function() {
-            const target = this.getAttribute('data-target');
-            changeScene(target);
-          });
+        
+        // Optimizaciones para Quest
+        function optimizeForQuest() {
+            // Reducir calidad de texturas si es necesario
+            if (renderer) {
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+                renderer.antialias = false; // Mejor performance en Quest
+            }
+        }
+        
+        // Detectar si está en VR
+        function onVRSessionStart() {
+            console.log('Sesión VR iniciada');
+            // Ocultar controles UI
+            document.getElementById('navigationControlsLeft').classList.add('hidden');
+            document.getElementById('navigationControlsRight').classList.add('hidden');
+            document.getElementById('info').style.display = 'none';
+        }
+        
+        function onVRSessionEnd() {
+            console.log('Sesión VR terminada');
+            // Mostrar controles UI
+            document.getElementById('navigationControlsLeft').classList.remove('hidden');
+            document.getElementById('navigationControlsRight').classList.remove('hidden');
+            document.getElementById('info').style.display = 'block';
+        }
+        
+        // Instalación como PWA
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            showInstallButton();
         });
-
-        // Inicializar
-        updateNavigationPoints();
-      });
+        
+        function showInstallButton() {
+            const installBtn = document.createElement('button');
+            installBtn.textContent = 'Instalar App';
+            installBtn.style.cssText = `
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                background: #4CAF50;
+                border: none;
+                padding: 10px 15px;
+                color: white;
+                border-radius: 5px;
+                cursor: pointer;
+                z-index: 100;
+            `;
+            installBtn.onclick = () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((result) => {
+                        if (result.outcome === 'accepted') {
+                            console.log('PWA instalada');
+                        }
+                        deferredPrompt = null;
+                        installBtn.remove();
+                    });
+                }
+            };
+            document.body.appendChild(installBtn);
+        }
+        
+        // Inicialización principal
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ocultar loading screen después de un momento
+            setTimeout(() => {
+                document.getElementById('loadingScreen').classList.add('hidden');
+            }, 1000);
+            
+            // Inicializar tour
+            initTourVirtualVR();
+            
+            // Optimizar para Quest
+            setTimeout(optimizeForQuest, 2000);
+            
+            // Event listeners para VR
+            if (navigator.xr) {
+                navigator.xr.addEventListener('sessionstart', onVRSessionStart);
+                navigator.xr.addEventListener('sessionend', onVRSessionEnd);
+            }
+        });
+        
+        // Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
     </script>
-  </body>
+</body>
+
 </html>
