@@ -124,6 +124,109 @@
     <script>
         let vrSupported = false;
         
+        // Funciones de precarga y loading personalizado
+        function showCustomLoadingScreen() {
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.id = 'vrLoadingOverlay';
+            loadingOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                color: white;
+                font-family: Arial, sans-serif;
+                font-size: 24px;
+                z-index: 10000;
+            `;
+            
+            loadingOverlay.innerHTML = `
+                <div style="text-align: center;">
+                    <h2>🥽 Iniciando experiencia VR</h2>
+                    <div id="loadingProgress">Preparando entorno virtual...</div>
+                    <div style="margin-top: 20px;">
+                        <div style="width: 300px; height: 6px; background: #333; border-radius: 3px;">
+                            <div id="loadingBar" style="width: 0%; height: 100%; background: #1483ff; border-radius: 3px; transition: width 0.3s;"></div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 16px; color: #aaa;">
+                        Tour Virtual de Geología
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(loadingOverlay);
+            return loadingOverlay;
+        }
+
+        function updateLoadingProgress(message, percent) {
+            const progressText = document.getElementById('loadingProgress');
+            const progressBar = document.getElementById('loadingBar');
+            
+            if (progressText) progressText.textContent = message;
+            if (progressBar) progressBar.style.width = percent + '%';
+        }
+
+        function hideCustomLoadingScreen() {
+            const overlay = document.getElementById('vrLoadingOverlay');
+            if (overlay) overlay.remove();
+        }
+
+        function preloadAllTextures() {
+            return new Promise((resolve) => {
+                const loadingOverlay = showCustomLoadingScreen();
+                const loader = new THREE.TextureLoader();
+                const preloadedTextures = {};
+                let loadedCount = 0;
+                const totalCount = scenes.length;
+                
+                updateLoadingProgress('Precargando experiencia VR...', 0);
+                
+                scenes.forEach((scene, index) => {
+                    loader.load(scene.filename, function(texture) {
+                        // Optimizar textura para Quest 3
+                        texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+                        texture.minFilter = THREE.LinearFilter;
+                        texture.magFilter = THREE.LinearFilter;
+                        texture.generateMipmaps = false;
+                        texture.encoding = THREE.sRGBEncoding;
+                        
+                        preloadedTextures[scene.id] = texture;
+                        loadedCount++;
+                        
+                        const progress = (loadedCount / totalCount) * 100;
+                        updateLoadingProgress(`Cargando escena ${loadedCount}/${totalCount}...`, progress);
+                        
+                        if (loadedCount === totalCount) {
+                            updateLoadingProgress('¡Todas las escenas cargadas!', 100);
+                            window.preloadedTextures = preloadedTextures;
+                            setTimeout(() => {
+                                hideCustomLoadingScreen();
+                                resolve();
+                            }, 1000);
+                        }
+                    }, undefined, function(error) {
+                        console.error(`Error loading ${scene.filename}:`, error);
+                        loadedCount++;
+                        const progress = (loadedCount / totalCount) * 100;
+                        updateLoadingProgress(`Error en escena ${loadedCount}/${totalCount}...`, progress);
+                        
+                        if (loadedCount === totalCount) {
+                            setTimeout(() => {
+                                hideCustomLoadingScreen();
+                                resolve();
+                            }, 1000);
+                        }
+                    });
+                });
+            });
+        }
+        
         // Función mejorada de inicialización
         function initTourVirtualVR() {
             // Tu función original
@@ -158,11 +261,16 @@
                 
                 vrButton.onclick = function() {
                     if (navigator.xr && renderer.xr) {
-                        navigator.xr.requestSession('immersive-vr').then(function(session) {
-                            renderer.xr.setSession(session);
-                            vrButton.textContent = 'EXIT VR';
-                        }).catch(function(err) {
-                            console.log('VR failed:', err);
+                        preloadAllTextures().then(() => {
+                            navigator.xr.requestSession('immersive-vr').then(function(session) {
+                                renderer.xr.setSession(session);
+                                vrButton.textContent = 'EXIT VR';
+                                
+                                // Manejar cuando termina la sesión VR
+                                session.addEventListener('end', function() {
+                                    vrButton.textContent = 'ENTER VR';
+                                });
+                            });
                         });
                     }
                 };

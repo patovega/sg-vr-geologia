@@ -213,6 +213,7 @@ function update() {
     renderer.render(scene, camera);
 }
 
+
 function loadScene(sceneId, onLoadedCallback) {
     console.log(`🎬 loadScene called for: ${sceneId}`);
     console.log(`📍 Current scene before change: ${currentSceneId}`);
