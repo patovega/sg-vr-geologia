@@ -331,47 +331,37 @@
                             renderer.xr.setSession(session);
                             vrButton.textContent = 'EXIT VR';
                             
-                            // CRÍTICO: Forzar renderizado inmediato para Quest
-                            setTimeout(() => {
-                                if (material && material.map) {
-                                    material.needsUpdate = true;
-                                    renderer.render(scene, camera);
-                                    showDebugMessage('🎉 Renderizado forzado - VR listo!', 'success');
+                            // CRÍTICO: Configurar el loop de renderizado VR
+                            function vrRenderLoop() {
+                                // Tu función update() que ya tienes
+                                if (typeof update === 'function') {
+                                    update();
                                 }
-                                
-                                // Segundo intento de renderizado si el primero no funciona
-                                setTimeout(() => {
-                                    if (scene && camera) {
-                                        renderer.render(scene, camera);
-                                        console.log('Segundo renderizado forzado');
-                                    }
-                                }, 200);
-                                
-                            }, 100);
+                                // Renderizar la escena
+                                renderer.render(scene, camera);
+                            }
                             
-                            // Manejar cuando termina la sesión VR
+                            // Establecer el loop de animación VR
+                            renderer.setAnimationLoop(vrRenderLoop);
+                            
+                            showDebugMessage('🎉 Loop VR configurado!', 'success');
+                            
                             session.addEventListener('end', function() {
                                 vrButton.textContent = 'ENTER VR';
                                 showDebugMessage('VR terminado');
+                                
+                                // Restaurar el loop normal cuando salga de VR
+                                renderer.setAnimationLoop(null);
+                                animate(); // Reanudar loop normal
                             });
                             
-                            showDebugMessage('🎉 ¡Configuración VR completa!', 'success');
+                            showDebugMessage('🎉 ¡VR completamente configurado!', 'success');
                         })
                         .catch(function(error) {
                             showDebugMessage(`❌ Error VR: ${error.message}`, 'error');
                             console.error('Error completo:', error);
-                            
-                            // Mostrar detalles específicos del error
-                            if (error.name === 'NotSupportedError') {
-                                showDebugMessage('❌ VR no soportado en este dispositivo', 'error');
-                            } else if (error.name === 'NotAllowedError') {
-                                showDebugMessage('❌ Permisos VR denegados', 'error');
-                            } else {
-                                showDebugMessage(`❌ Error desconocido: ${error.name}`, 'error');
-                            }
                         });
-                    };
-
+                };
                 document.getElementById('vrButton').appendChild(vrButton);
                 
                 // Reemplazar tu animate() existente con el loop de VR
@@ -381,7 +371,7 @@
                 }
                 
                 // Configurar loop de animación para VR
-                renderer.setAnimationLoop(vrAnimate);
+                //renderer.setAnimationLoop(vrAnimate);
                 
                 vrSupported = true;
                 console.log('WebXR configurado correctamente para tour de geología');
