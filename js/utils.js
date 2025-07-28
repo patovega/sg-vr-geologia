@@ -43,7 +43,6 @@ function initTourVirtual() {
 }
 
 function init() {
-    // Asegúrate de que el DOM esté completamente cargado
     if (!document.body) {
         console.error("El cuerpo del documento no está disponible. Esperando a que se cargue el DOM...");
         window.addEventListener('DOMContentLoaded', init);
@@ -65,13 +64,13 @@ function init() {
     mesh = new THREE.Mesh(geometry, material);
     scene.add(mesh);
 
-    createLineMarker(); // Create the line marker geometry once
+    createLineMarker();
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputEncoding = THREE.sRGBEncoding;
-    optimizeForQuest(); // ← Nueva línea
+    optimizeForQuest();
     container.appendChild(renderer.domElement);
 
     container.style.touchAction = 'none';
@@ -261,13 +260,13 @@ function loadScene(sceneId, onLoadedCallback) {
             
             // Optimizaciones específicas para Quest
             const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
-            texture.anisotropy = Math.min(4, maxAnisotropy);
+            texture.anisotropy = Math.min(8, maxAnisotropy); // Quest 3 puede más
             
             texture.minFilter = THREE.LinearFilter;
             texture.magFilter = THREE.LinearFilter;
             texture.generateMipmaps = false;
-            texture.format = THREE.RGBFormat;
             texture.encoding = THREE.sRGBEncoding;
+            
             
             // Verificar tamaño de textura
             if (texture.image) {
