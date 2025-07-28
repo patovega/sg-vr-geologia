@@ -1,24 +1,24 @@
 const scenes = [
     {
-        id: '1',
+        id: '1_',
         title: '1era estacion',
         filename: './images/1.jpg',
         
     },
     {
-        id: '2',  
+        id: '2_',  
         title: '2da estacion',
         filename: './images/2.jpg',
         
     },
     {
-        id: '3',
+        id: '3_',
         title: '3ra estacion',
         filename: './images/3.jpg',
         
     },
     {
-        id: '4',
+        id: '4_fotografia',
         title: 'Fotografia',
         filename: './images/4.jpg',
         
