@@ -58,12 +58,19 @@ function init() {
 
     const geometry = new THREE.SphereGeometry(500, 60, 40);
     geometry.scale(-1, 1, 1);
-    const texture = textureLoader.load(scenes.find(s => s.id === currentSceneId).filename);
+  
+    const texture = textureLoader.load(scenes.find(s => s.id === currentSceneId).filename, function(loadedTexture) {
+        // Callback cuando la textura se carga completamente
+        loadedTexture.needsUpdate = true;
+        material.needsUpdate = true;
+        renderer.render(scene, camera);
+        console.log('Primera textura cargada y renderizada');
+    });
     material = new THREE.MeshBasicMaterial({ map: texture });
  
     mesh = new THREE.Mesh(geometry, material);
     scene.add(mesh);
-
+    
     createLineMarker();
 
     renderer = new THREE.WebGLRenderer({ antialias: true });

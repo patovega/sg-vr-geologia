@@ -331,19 +331,47 @@
                             renderer.xr.setSession(session);
                             vrButton.textContent = 'EXIT VR';
                             
+                            // CRÍTICO: Forzar renderizado inmediato para Quest
+                            setTimeout(() => {
+                                if (material && material.map) {
+                                    material.needsUpdate = true;
+                                    renderer.render(scene, camera);
+                                    showDebugMessage('🎉 Renderizado forzado - VR listo!', 'success');
+                                }
+                                
+                                // Segundo intento de renderizado si el primero no funciona
+                                setTimeout(() => {
+                                    if (scene && camera) {
+                                        renderer.render(scene, camera);
+                                        console.log('Segundo renderizado forzado');
+                                    }
+                                }, 200);
+                                
+                            }, 100);
+                            
+                            // Manejar cuando termina la sesión VR
                             session.addEventListener('end', function() {
                                 vrButton.textContent = 'ENTER VR';
                                 showDebugMessage('VR terminado');
                             });
                             
-                            showDebugMessage('🎉 ¡Entrando a VR!', 'success');
+                            showDebugMessage('🎉 ¡Configuración VR completa!', 'success');
                         })
                         .catch(function(error) {
                             showDebugMessage(`❌ Error VR: ${error.message}`, 'error');
                             console.error('Error completo:', error);
+                            
+                            // Mostrar detalles específicos del error
+                            if (error.name === 'NotSupportedError') {
+                                showDebugMessage('❌ VR no soportado en este dispositivo', 'error');
+                            } else if (error.name === 'NotAllowedError') {
+                                showDebugMessage('❌ Permisos VR denegados', 'error');
+                            } else {
+                                showDebugMessage(`❌ Error desconocido: ${error.name}`, 'error');
+                            }
                         });
-                };
-                
+                    };
+
                 document.getElementById('vrButton').appendChild(vrButton);
                 
                 // Reemplazar tu animate() existente con el loop de VR
