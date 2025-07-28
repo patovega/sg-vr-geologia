@@ -218,6 +218,41 @@ function loadScene(sceneId, onLoadedCallback) {
     console.log(`🎬 loadScene called for: ${sceneId}`);
     console.log(`📍 Current scene before change: ${currentSceneId}`);
     
+    // PRIORIDAD 1: Usar textura precargada si existe
+    if (window.preloadedTextures && window.preloadedTextures[sceneId]) {
+        console.log(`⚡ Using preloaded texture for: ${sceneId}`);
+        const texture = window.preloadedTextures[sceneId];
+        
+        // Aplicar textura precargada inmediatamente
+        const oldTexture = material.map;
+        material.map = texture;
+        material.needsUpdate = true;
+        
+        // Liberar textura anterior
+        if (oldTexture && oldTexture !== texture) {
+            oldTexture.dispose();
+            console.log(`🗑️ Old texture disposed`);
+        }
+        
+        // Forzar renderizado inmediato
+        renderer.render(scene, camera);
+        
+        // Actualizar estado y UI
+        currentSceneId = sceneId;
+        updateInfoText();
+        createHotspotsForCurrentScene();
+        
+        console.log(`⚡ Instant scene change completed for: ${sceneId}`);
+        
+        if (onLoadedCallback) {
+            console.log(`🎯 Executing onLoadedCallback for preloaded scene: ${sceneId}`);
+            onLoadedCallback();
+        }
+        
+        return; // SALIR AQUÍ - No necesita carga adicional
+    }
+    
+    // PRIORIDAD 2: Si no está precargada, cargar normalmente
     currentSceneId = sceneId;
     const sceneData = scenes.find(s => s.id === sceneId);
     
@@ -228,12 +263,18 @@ function loadScene(sceneId, onLoadedCallback) {
     }
     
     console.log(`✅ Scene data found:`, sceneData);
-    console.log(`🔍 Trying to load file: ${sceneData.filename}`);
+    console.log(`🔍 Loading texture from file: ${sceneData.filename}`);
     
     // Verificar que el material existe
     if (!material) {
         console.error("❌ Material not found! Cannot load texture.");
         return;
+    }
+    
+    // Mostrar progreso de carga en pantalla
+    const infoDiv = document.getElementById('info');
+    if (infoDiv) {
+        infoDiv.textContent = `Cargando escena...`;
     }
     
     // Configura opciones avanzadas para el cargador de texturas
@@ -259,29 +300,31 @@ function loadScene(sceneId, onLoadedCallback) {
             console.log(`✅ SUCCESS: Texture loaded for scene: ${sceneId}`);
             console.log(`📏 Texture dimensions: ${texture.image ? texture.image.width + 'x' + texture.image.height : 'unknown'}`);
             
-            // Optimizaciones específicas para Quest
+            // Optimizaciones específicas para Quest 3
             const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
-            texture.anisotropy = Math.min(8, maxAnisotropy); // Quest 3 puede más
+            texture.anisotropy = Math.min(8, maxAnisotropy); // Quest 3 puede manejar más anisotropía
             
             texture.minFilter = THREE.LinearFilter;
             texture.magFilter = THREE.LinearFilter;
             texture.generateMipmaps = false;
             texture.encoding = THREE.sRGBEncoding;
             
+            // NO forzar formato - dejar que Three.js lo maneje automáticamente
             
-            // Verificar tamaño de textura
+            // Verificar tamaño de textura y optimizar para Quest 3
             if (texture.image) {
                 const width = texture.image.width;
                 const height = texture.image.height;
                 console.log(`📐 Final texture dimensions: ${width}x${height}`);
                 
                 if (width > 4096 || height > 2048) {
-                    console.warn(`⚠️ Texture ${sceneData.filename} is very large (${width}x${height}). Consider resizing for better Quest performance.`);
+                    console.warn(`⚠️ Texture ${sceneData.filename} is large (${width}x${height}). Quest 3 can handle it, but consider 4096x2048 for optimal performance.`);
                 }
                 
                 if (width > 8000 || height > 4000) {
-                    console.warn(`🚨 Texture is extremely large! This may cause performance issues on Quest.`);
-                    texture.anisotropy = Math.min(2, maxAnisotropy);
+                    console.warn(`🚨 Texture is extremely large! Consider resizing to 4096x2048 for better Quest 3 performance.`);
+                    // Para texturas muy grandes, reducir anisotropía
+                    texture.anisotropy = Math.min(4, maxAnisotropy);
                 }
             }
             
@@ -292,13 +335,13 @@ function loadScene(sceneId, onLoadedCallback) {
             material.map = texture;
             material.needsUpdate = true;
             
-            // Liberar textura anterior
+            // Liberar textura anterior para ahorrar memoria
             if (oldTexture && oldTexture !== texture) {
                 oldTexture.dispose();
                 console.log(`🗑️ Old texture disposed`);
             }
             
-            // Forzar renderizado
+            // Forzar renderizado inmediato
             renderer.render(scene, camera);
             console.log(`🖼️ Material updated and rendered for scene: ${sceneId}`);
             
@@ -315,13 +358,26 @@ function loadScene(sceneId, onLoadedCallback) {
             console.log(`🎉 Scene loading completed successfully: ${sceneId}`);
         },
         
-        // Progress callback
+        // Progress callback - mostrar progreso en pantalla
         function(progress) {
             if (progress.lengthComputable) {
                 const percentComplete = (progress.loaded / progress.total) * 100;
-                console.log(`📥 Loading ${sceneId}: ${Math.round(percentComplete)}% (${progress.loaded}/${progress.total} bytes)`);
+                const mbLoaded = (progress.loaded / 1024 / 1024).toFixed(1);
+                const mbTotal = (progress.total / 1024 / 1024).toFixed(1);
+                
+                console.log(`📥 Loading ${sceneId}: ${Math.round(percentComplete)}% (${mbLoaded}/${mbTotal} MB)`);
+                
+                // Mostrar progreso en pantalla
+                if (infoDiv) {
+                    infoDiv.textContent = `Cargando: ${Math.round(percentComplete)}% (${mbLoaded}MB)`;
+                }
             } else {
-                console.log(`📥 Loading ${sceneId}: ${progress.loaded} bytes loaded`);
+                const mbLoaded = (progress.loaded / 1024 / 1024).toFixed(1);
+                console.log(`📥 Loading ${sceneId}: ${mbLoaded} MB loaded`);
+                
+                if (infoDiv) {
+                    infoDiv.textContent = `Cargando: ${mbLoaded} MB...`;
+                }
             }
         },
         
@@ -336,9 +392,8 @@ function loadScene(sceneId, onLoadedCallback) {
             });
             
             // Mostrar mensaje de error al usuario
-            const infoDiv = document.getElementById('info');
             if (infoDiv) {
-                infoDiv.textContent = `❌ Error loading scene: ${sceneId}`;
+                infoDiv.textContent = `❌ Error cargando escena: ${sceneId}`;
                 infoDiv.style.color = 'red';
                 
                 // Restaurar después de 3 segundos
@@ -350,7 +405,6 @@ function loadScene(sceneId, onLoadedCallback) {
         }
     );
 }
-
 function optimizeForQuest() {
     if (renderer) {
         // Configuración específica para Quest 3

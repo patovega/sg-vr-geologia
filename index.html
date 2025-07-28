@@ -261,20 +261,27 @@
                 
                 vrButton.onclick = function() {
                     if (navigator.xr && renderer.xr) {
+                        // PRIMERO: Precargar todas las texturas
                         preloadAllTextures().then(() => {
+                            console.log('✅ Todas las texturas precargadas, ahora iniciando VR...');
+                            
+                            // SEGUNDO: Solo después de precargar, iniciar VR
                             navigator.xr.requestSession('immersive-vr').then(function(session) {
                                 renderer.xr.setSession(session);
                                 vrButton.textContent = 'EXIT VR';
                                 
-                                // Manejar cuando termina la sesión VR
                                 session.addEventListener('end', function() {
                                     vrButton.textContent = 'ENTER VR';
                                 });
+                            }).catch(function(err) {
+                                console.log('VR failed:', err);
                             });
+                        }).catch(function(err) {
+                            console.log('Preload failed:', err);
                         });
                     }
                 };
-                
+                                
                 document.getElementById('vrButton').appendChild(vrButton);
                 
                 // Reemplazar tu animate() existente con el loop de VR
