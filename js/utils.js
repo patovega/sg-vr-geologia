@@ -71,7 +71,7 @@ function init() {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputEncoding = THREE.sRGBEncoding;
-    
+    optimizeForQuest(); // ← Nueva línea
     container.appendChild(renderer.domElement);
 
     container.style.touchAction = 'none';
@@ -266,7 +266,7 @@ function loadScene(sceneId, onLoadedCallback) {
             texture.minFilter = THREE.LinearFilter;
             texture.magFilter = THREE.LinearFilter;
             texture.generateMipmaps = false;
-            texture.format = THREE.RGBAFormat;  // ← Cambio aquí
+            texture.format = THREE.RGBFormat;
             texture.encoding = THREE.sRGBEncoding;
             
             // Verificar tamaño de textura
@@ -349,6 +349,18 @@ function loadScene(sceneId, onLoadedCallback) {
             }
         }
     );
+}
+
+function optimizeForQuest() {
+    if (renderer) {
+        // Configuración específica para Quest 3
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Mayor calidad
+        renderer.antialias = true; // Quest 3 puede manejar antialiasing
+        renderer.shadowMap.enabled = false; // No necesario para 360°
+        renderer.powerPreference = "high-performance"; // Usar GPU dedicada
+        
+        console.log('🚀 Quest 3 optimizations applied');
+    }
 }
 
 function createHotspotsForCurrentScene() {
