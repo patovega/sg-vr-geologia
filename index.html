@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <title>Tour VR 360° - Con Menú</title>
-    <meta name="description" content="SGSCM Geologia VR">
+    <meta name="description" content="Tour VR con menú lateral - A-Frame">
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
   </head>
@@ -223,7 +223,7 @@
 
       <!-- Cursor VR/Web híbrido -->
       <a-camera id="camera"
-                look-controls="enabled: true; pointerLockEnabled: false"
+                look-controls="enabled: true; pointerLockEnabled: false; touchEnabled: true"
                 wasd-controls="enabled: true; acceleration: 100"
                 position="0 1.6 0">
         
@@ -237,6 +237,23 @@
           animation__mouseleave="property: material.opacity; to: 0.6; startEvents: mouseleave; dur: 200"
           raycaster="objects: .clickable; far: 20">
         </a-cursor>
+        
+        <!-- Controles VR - manos izquierda y derecha -->
+        <a-entity id="leftHand" 
+                  hand-controls="hand: left; handModelStyle: lowPoly; color: #ffcccc"
+                  laser-controls="hand: left"
+                  raycaster="objects: .clickable; far: 20"
+                  line="color: #FFD700; opacity: 0.5"
+                  visible="false">
+        </a-entity>
+        
+        <a-entity id="rightHand" 
+                  hand-controls="hand: right; handModelStyle: lowPoly; color: #ccffcc"
+                  laser-controls="hand: right"
+                  raycaster="objects: .clickable; far: 20"
+                  line="color: #FFD700; opacity: 0.5"
+                  visible="false">
+        </a-entity>
       </a-camera>
     </a-scene>
 
@@ -272,15 +289,35 @@
         document.querySelector('a-scene').addEventListener('enter-vr', function() {
           isInVR = true;
           console.log('🥽 Entrando a modo VR');
-          // En VR, desactivar look-controls si quieres solo controles manuales
-          // camera.setAttribute('look-controls', 'enabled: false');
+          
+          // En VR: activar controles de mano y ocultar cursor de cabeza
+          const leftHand = document.querySelector('#leftHand');
+          const rightHand = document.querySelector('#rightHand');
+          const cursor = document.querySelector('a-cursor');
+          
+          if (leftHand) leftHand.setAttribute('visible', true);
+          if (rightHand) rightHand.setAttribute('visible', true);
+          if (cursor) cursor.setAttribute('visible', false);
+          
+          console.log('✅ Controles VR activados - Usa los mandos de Oculus');
         });
         
         document.querySelector('a-scene').addEventListener('exit-vr', function() {
           isInVR = false;
           console.log('💻 Saliendo de modo VR');
-          // Al salir de VR, reactivar look-controls
+          
+          // En Web: ocultar controles de mano y mostrar cursor
+          const leftHand = document.querySelector('#leftHand');
+          const rightHand = document.querySelector('#rightHand');
+          const cursor = document.querySelector('a-cursor');
+          
+          if (leftHand) leftHand.setAttribute('visible', false);
+          if (rightHand) rightHand.setAttribute('visible', false);
+          if (cursor) cursor.setAttribute('visible', true);
+          
+          // Reactivar look-controls para web
           camera.setAttribute('look-controls', 'enabled: true');
+          console.log('✅ Controles web reactivados');
         });
 
         // Configuración de escenas
@@ -436,6 +473,9 @@
         document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
         function updateKeyboardCamera() {
+          // Solo aplicar controles de teclado en modo web
+          if (isInVR) return;
+          
           const speed = 2;
           
           // Flechas o IJKL para controlar la vista
@@ -452,20 +492,38 @@
             rotationX += speed;
           }
           
+          // WASD también para vista (además de movimiento)
+          if (keys['a']) {
+            rotationY -= speed;
+          }
+          if (keys['d']) {
+            rotationY += speed;
+          }
+          if (keys['w']) {
+            rotationX -= speed * 0.5; // Más lento para W/S
+          }
+          if (keys['s']) {
+            rotationX += speed * 0.5;
+          }
+          
           // Limitar rotación vertical
           rotationX = Math.max(-90, Math.min(90, rotationX));
           
           // Aplicar rotación si hay cambios
           if (keys['arrowleft'] || keys['arrowright'] || keys['arrowup'] || keys['arrowdown'] ||
-              keys['j'] || keys['l'] || keys['i'] || keys['k']) {
+              keys['j'] || keys['l'] || keys['i'] || keys['k'] ||
+              keys['a'] || keys['d'] || keys['w'] || keys['s']) {
             camera.setAttribute('rotation', `${rotationX} ${rotationY} 0`);
           }
         }
 
         // Loop de actualización para controles
         function controlsLoop() {
-          updateCameraRotation();
-          updateKeyboardCamera();
+          // Solo aplicar controles manuales en modo web
+          if (!isInVR) {
+            updateCameraRotation();
+            updateKeyboardCamera();
+          }
           requestAnimationFrame(controlsLoop);
         }
 
@@ -500,11 +558,13 @@
         
         // Instrucciones en consola
         console.log('🎮 CONTROLES DISPONIBLES:');
-        console.log('📱 GAMEPAD/OCULUS:');
-        console.log('  - Stick derecho: Controlar vista');
-        console.log('  - A/X/Y/B: Cambiar escenas 1-4');
-        console.log('⌨️ TECLADO:');
-        console.log('  - Flechas o IJKL: Controlar vista');
+        console.log('🥽 EN VR (OCULUS):');
+        console.log('  - Mandos izquierdo/derecho: Apuntar y hacer trigger');
+        console.log('  - Movimiento de cabeza: Vista automática');
+        console.log('  - Trigger en botones del menú: Navegación');
+        console.log('💻 EN WEB:');
+        console.log('  - Mouse: Click en botones del menú');
+        console.log('  - WASD/Flechas/IJKL: Controlar vista');
         console.log('  - Números 1-4: Cambiar escenas');
         console.log('  - Espacio: Auto tour on/off');
       });
