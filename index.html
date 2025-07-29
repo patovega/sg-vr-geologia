@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Tour VR 360° - Con Menú</title>
+    <title>Tour VR 360° - 280720252316</title>
     <meta name="description" content="Tour VR con menú lateral - A-Frame">
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
@@ -49,7 +49,7 @@
               rotation="0 20 0"
               align="center" 
               color="#FFD700" 
-              scale="0.4 0.4 0.4"
+              scale="1.2 1.2 1.2"
               font="kelsonsans">
       </a-text>
 
@@ -79,7 +79,7 @@
                 position="-0.9 0 0.01" 
                 align="left" 
                 color="#FFF" 
-                scale="0.4 0.4 0.4"
+                scale="1.2 1.2 1.2"
                 font="kelsonsans"
                 wrap-count="18">
         </a-text>
@@ -102,7 +102,7 @@
                 position="-0.9 0 0.01" 
                 align="left" 
                 color="#FFF" 
-                scale="0.4 0.4 0.4"
+                scale="1.2 1.2 1.2"
                 font="kelsonsans"
                 wrap-count="18">
         </a-text>
@@ -125,7 +125,7 @@
                 position="-0.9 0 0.01" 
                 align="left" 
                 color="#FFF" 
-                scale="0.4 0.4 0.4"
+                scale="1.2 1.2 1.2"
                 font="kelsonsans"
                 wrap-count="18">
         </a-text>
@@ -148,7 +148,7 @@
                 position="-0.9 0 0.01" 
                 align="left" 
                 color="#FFF" 
-                scale="0.4 0.4 0.4"
+                scale="1.2 1.2 1.2"
                 font="kelsonsans"
                 wrap-count="18">
         </a-text>
@@ -223,35 +223,36 @@
 
       <!-- Cursor VR/Web híbrido -->
       <a-camera id="camera"
-                look-controls="enabled: true; pointerLockEnabled: false; touchEnabled: true"
+                look-controls="enabled: true; pointerLockEnabled: false; touchEnabled: true; magicWindowTrackingEnabled: true"
                 wasd-controls="enabled: true; acceleration: 100"
                 position="0 1.6 0">
         
-        <!-- Cursor para navegación web/VR -->
-        <a-cursor 
+        <!-- Cursor para navegación web SOLAMENTE -->
+        <a-cursor id="web-cursor"
           position="0 0 -1"
           geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015"
           material="color: #FFD700; shader: flat; opacity: 0.6"
           animation__click="property: scale; startEvents: click; from: 0.8 0.8 0.8; to: 1.2 1.2 1.2; dur: 150"
           animation__mouseenter="property: material.opacity; to: 1; startEvents: mouseenter; dur: 200"
           animation__mouseleave="property: material.opacity; to: 0.6; startEvents: mouseleave; dur: 200"
-          raycaster="objects: .clickable; far: 20">
+          raycaster="objects: .clickable; far: 20"
+          visible="true">
         </a-cursor>
         
         <!-- Controles VR - manos izquierda y derecha -->
         <a-entity id="leftHand" 
                   hand-controls="hand: left; handModelStyle: lowPoly; color: #ffcccc"
                   laser-controls="hand: left"
-                  raycaster="objects: .clickable; far: 20"
-                  line="color: #FFD700; opacity: 0.5"
+                  raycaster="objects: .clickable; far: 20; lineColor: #FFD700; lineOpacity: 0.8"
+                  line="color: #FFD700; opacity: 0.8; visible: false"
                   visible="false">
         </a-entity>
         
         <a-entity id="rightHand" 
                   hand-controls="hand: right; handModelStyle: lowPoly; color: #ccffcc"
                   laser-controls="hand: right"
-                  raycaster="objects: .clickable; far: 20"
-                  line="color: #FFD700; opacity: 0.5"
+                  raycaster="objects: .clickable; far: 20; lineColor: #FFD700; lineOpacity: 0.8"
+                  line="color: #FFD700; opacity: 0.8; visible: false"
                   visible="false">
         </a-entity>
       </a-camera>
@@ -290,16 +291,28 @@
           isInVR = true;
           console.log('🥽 Entrando a modo VR');
           
-          // En VR: activar controles de mano y ocultar cursor de cabeza
+          // En VR: activar controles de mano y OCULTAR completamente cursor
           const leftHand = document.querySelector('#leftHand');
           const rightHand = document.querySelector('#rightHand');
-          const cursor = document.querySelector('a-cursor');
+          const webCursor = document.querySelector('#web-cursor');
           
-          if (leftHand) leftHand.setAttribute('visible', true);
-          if (rightHand) rightHand.setAttribute('visible', true);
-          if (cursor) cursor.setAttribute('visible', false);
+          if (leftHand) {
+            leftHand.setAttribute('visible', true);
+            leftHand.querySelector('[line]').setAttribute('visible', true);
+          }
+          if (rightHand) {
+            rightHand.setAttribute('visible', true);
+            rightHand.querySelector('[line]').setAttribute('visible', true);
+          }
+          if (webCursor) {
+            webCursor.setAttribute('visible', false);
+            webCursor.setAttribute('raycaster', 'enabled: false');
+          }
           
-          console.log('✅ Controles VR activados - Usa los mandos de Oculus');
+          // Desactivar look-controls automático en VR para que no compita con mandos
+          camera.setAttribute('look-controls', 'enabled: false');
+          
+          console.log('✅ Controles VR activados - Cursor web OCULTO');
         });
         
         document.querySelector('a-scene').addEventListener('exit-vr', function() {
@@ -309,15 +322,24 @@
           // En Web: ocultar controles de mano y mostrar cursor
           const leftHand = document.querySelector('#leftHand');
           const rightHand = document.querySelector('#rightHand');
-          const cursor = document.querySelector('a-cursor');
+          const webCursor = document.querySelector('#web-cursor');
           
-          if (leftHand) leftHand.setAttribute('visible', false);
-          if (rightHand) rightHand.setAttribute('visible', false);
-          if (cursor) cursor.setAttribute('visible', true);
+          if (leftHand) {
+            leftHand.setAttribute('visible', false);
+            if (leftHand.querySelector('[line]')) leftHand.querySelector('[line]').setAttribute('visible', false);
+          }
+          if (rightHand) {
+            rightHand.setAttribute('visible', false);
+            if (rightHand.querySelector('[line]')) rightHand.querySelector('[line]').setAttribute('visible', false);
+          }
+          if (webCursor) {
+            webCursor.setAttribute('visible', true);
+            webCursor.setAttribute('raycaster', 'enabled: true');
+          }
           
           // Reactivar look-controls para web
-          camera.setAttribute('look-controls', 'enabled: true');
-          console.log('✅ Controles web reactivados');
+          camera.setAttribute('look-controls', 'enabled: true; touchEnabled: true');
+          console.log('✅ Controles web reactivados - Cursor visible');
         });
 
         // Configuración de escenas
@@ -467,10 +489,48 @@
           }
         }
 
-        // Controles de teclado para vista (WASD alternativo)
+        // Controles de teclado y touch para Oculus Browser
         const keys = {};
+        let touchStartY = null;
+        let touchStartX = null;
+        
         document.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
         document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+        // Touch controls específicos para Oculus Browser
+        document.addEventListener('touchstart', function(e) {
+          if (e.touches.length === 1) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+          }
+        });
+
+        document.addEventListener('touchmove', function(e) {
+          if (!isInVR && touchStartX !== null && touchStartY !== null && e.touches.length === 1) {
+            e.preventDefault();
+            
+            const deltaX = e.touches[0].clientX - touchStartX;
+            const deltaY = e.touches[0].clientY - touchStartY;
+            
+            const sensitivity = 0.5;
+            
+            rotationY += deltaX * sensitivity;
+            rotationX -= deltaY * sensitivity; // Negativo para inversión natural
+            
+            // Limitar rotación vertical
+            rotationX = Math.max(-90, Math.min(90, rotationX));
+            
+            camera.setAttribute('rotation', `${rotationX} ${rotationY} 0`);
+            
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+          }
+        });
+
+        document.addEventListener('touchend', function(e) {
+          touchStartX = null;
+          touchStartY = null;
+        });
 
         function updateKeyboardCamera() {
           // Solo aplicar controles de teclado en modo web
@@ -556,17 +616,19 @@
           }
         }, 2000);
         
-        // Instrucciones en consola
         console.log('🎮 CONTROLES DISPONIBLES:');
         console.log('🥽 EN VR (OCULUS):');
-        console.log('  - Mandos izquierdo/derecho: Apuntar y hacer trigger');
-        console.log('  - Movimiento de cabeza: Vista automática');
-        console.log('  - Trigger en botones del menú: Navegación');
-        console.log('💻 EN WEB:');
-        console.log('  - Mouse: Click en botones del menú');
-        console.log('  - WASD/Flechas/IJKL: Controlar vista');
+        console.log('  - Mandos: Apuntar y trigger para navegar');
+        console.log('  - Movimiento natural de cabeza');
+        console.log('  - SIN punto amarillo en VR');
+        console.log('💻 EN WEB (PC):');
+        console.log('  - Mouse: Click y arrastrar para vista');
+        console.log('  - WASD/Flechas: Controlar vista');
         console.log('  - Números 1-4: Cambiar escenas');
-        console.log('  - Espacio: Auto tour on/off');
+        console.log('📱 EN OCULUS BROWSER (modo web):');
+        console.log('  - Touch: Arrastrar dedo para vista vertical/horizontal');
+        console.log('  - Tap: Click en botones del menú');
+        console.log('  - Números del teclado virtual: Escenas directas');
       });
     </script>
   </body>
