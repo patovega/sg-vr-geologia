@@ -1,23 +1,9 @@
-// Detectar si estamos en VR o web
-        let isInVR = false;
-        
-        // Escuchar eventos de VR
-        document.querySelector('a-scene').addEventListener('enter-vr', function() {
-          isInVR = true;
-          // En VR, desactivar look-controls si quieres solo controles manuales
-          // camera.setAttribute('look-controls', 'enabled: false');
-        });
-        
-        document.querySelector('a-scene').addEventListener('exit-vr', function() {
-          isInVR = false;
-          // Al salir de VR, reactivar look-controls
-          camera.setAttribute('look-controls', 'enabled: true');
-        });<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
     <title>Tour VR 360° - Con Menú</title>
-    <meta name="description" content="Tour VR con menú lateral - A-Frame">
+    <meta name="description" content="SGSCM Geologia VR">
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
   </head>
@@ -278,6 +264,24 @@
         const autoTourBtn = document.querySelector('#auto-tour-btn');
         const autoTourText = document.querySelector('#auto-tour-text');
         const menuItems = document.querySelectorAll('.menu-item');
+
+        // Detectar si estamos en VR o web
+        let isInVR = false;
+        
+        // Escuchar eventos de VR
+        document.querySelector('a-scene').addEventListener('enter-vr', function() {
+          isInVR = true;
+          console.log('🥽 Entrando a modo VR');
+          // En VR, desactivar look-controls si quieres solo controles manuales
+          // camera.setAttribute('look-controls', 'enabled: false');
+        });
+        
+        document.querySelector('a-scene').addEventListener('exit-vr', function() {
+          isInVR = false;
+          console.log('💻 Saliendo de modo VR');
+          // Al salir de VR, reactivar look-controls
+          camera.setAttribute('look-controls', 'enabled: true');
+        });
 
         // Configuración de escenas
         const scenes = {
