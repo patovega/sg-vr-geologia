@@ -1,14 +1,28 @@
-<!DOCTYPE html>
+// Detectar si estamos en VR o web
+        let isInVR = false;
+        
+        // Escuchar eventos de VR
+        document.querySelector('a-scene').addEventListener('enter-vr', function() {
+          isInVR = true;
+          // En VR, desactivar look-controls si quieres solo controles manuales
+          // camera.setAttribute('look-controls', 'enabled: false');
+        });
+        
+        document.querySelector('a-scene').addEventListener('exit-vr', function() {
+          isInVR = false;
+          // Al salir de VR, reactivar look-controls
+          camera.setAttribute('look-controls', 'enabled: true');
+        });<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Tour VR 360° - Geologia</title>
+    <title>Tour VR 360° - Con Menú</title>
     <meta name="description" content="Tour VR con menú lateral - A-Frame">
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
   </head>
   <body>
-    <a-scene background="color: #000000" cursor="rayOrigin: mouse">
+    <a-scene background="color: #000000" cursor="rayOrigin: mouse" vr-mode-ui="enabled: true">
       <!-- Assets -->
       <a-assets>
         <!-- Tus imágenes locales -->
@@ -39,12 +53,12 @@
       </a-plane>
 
       <!-- Título del menú -->
-      <a-text value="Geologia" 
+      <a-text value="Patio Geologia" 
               position="-4.5 2.5 -2.9" 
               rotation="0 20 0"
               align="center" 
               color="#FFD700" 
-              scale="1.2 1.2 1.2"
+              scale="0.4 0.4 0.4"
               font="kelsonsans">
       </a-text>
 
@@ -70,11 +84,11 @@
                animation__hover="property: scale; to: 1.1 1.1 1.1; startEvents: mouseenter; dur: 200"
                animation__unhover="property: scale; to: 1 1 1; startEvents: mouseleave; dur: 200"
                sound="src: #click-sound; on: click">
-        <a-text value="1. Traslado" 
+        <a-text value="1. Traslado testigo" 
                 position="-0.9 0 0.01" 
                 align="left" 
                 color="#FFF" 
-                scale="0.5 0.5 0.5"
+                scale="0.4 0.4 0.4"
                 font="kelsonsans"
                 wrap-count="18">
         </a-text>
@@ -93,11 +107,11 @@
                animation__hover="property: scale; to: 1.1 1.1 1.1; startEvents: mouseenter; dur: 200"
                animation__unhover="property: scale; to: 1 1 1; startEvents: mouseleave; dur: 200"
                sound="src: #click-sound; on: click">
-        <a-text value="2. Clasificacion" 
+        <a-text value="2. Clasificacion testigo" 
                 position="-0.9 0 0.01" 
                 align="left" 
                 color="#FFF" 
-                scale="0.5 0.5 0.5"
+                scale="0.4 0.4 0.4"
                 font="kelsonsans"
                 wrap-count="18">
         </a-text>
@@ -120,7 +134,8 @@
                 position="-0.9 0 0.01" 
                 align="left" 
                 color="#FFF" 
-                scale="0.5 0.5 0.5"
+                scale="0.4 0.4 0.4"
+
                 font="kelsonsans"
                 wrap-count="18">
         </a-text>
@@ -139,11 +154,12 @@
                animation__hover="property: scale; to: 1.1 1.1 1.1; startEvents: mouseenter; dur: 200"
                animation__unhover="property: scale; to: 1 1 1; startEvents: mouseleave; dur: 200"
                sound="src: #click-sound; on: click">
-        <a-text value="4. Sala fotografia" 
+        <a-text value="4. Sala de fotografia" 
                 position="-0.9 0 0.01" 
                 align="left" 
                 color="#FFF" 
-                scale="0.5 0.5 0.5"
+                scale="0.4 0.4 0.4"
+
                 font="kelsonsans"
                 wrap-count="18">
         </a-text>
@@ -175,7 +191,7 @@
                 position="0 0 0.01" 
                 align="center" 
                 color="#FFF" 
-                scale="1.2 1.2 1.2"
+                scale="0.4 0.4 0.4"
                 font="kelsonsans">
         </a-text>
       </a-plane>
@@ -187,7 +203,7 @@
               rotation="0 20 0"
               align="left" 
               color="#FFD700" 
-              scale="0.8 0.8 0.8"
+              scale="0.4 0.4 0.4"
               animation__blink="property: opacity; to: 0.3; dir: alternate; dur: 1000; loop: true">
       </a-text>
 
@@ -201,30 +217,36 @@
               position="0 3 -5"
               align="center"
               color="#FFF"
+              scale="0.4 0.4 0.4"
               animation__fadein="property: opacity; from: 0; to: 1; dur: 1000; delay: 500">
       </a-text>
 
-      <!-- Instrucciones -->
-      <a-text value="Mira hacia la IZQUIERDA para ver el menú de navegación" 
+      <!-- Instrucciones actualizadas -->
+      <a-text value="CONTROLES: Flechas/IJKL = Vista | Gamepad stick derecho = Vista | Números 1-4 = Escenas" 
               position="0 -3 -5"
               align="center"
               color="#CCC"
-              scale="0.8 0.8 0.8"
+              scale="0.4 0.4 0.4"
               opacity="0.7"
-              animation__fade="property: opacity; to: 0; dur: 2000; delay: 5000">
+              wrap-count="80"
+              animation__fade="property: opacity; to: 0; dur: 3000; delay: 8000">
       </a-text>
 
-      <!-- Cursor VR -->
-      <a-camera>
+      <!-- Cursor VR/Web híbrido -->
+      <a-camera id="camera"
+                look-controls="enabled: true; pointerLockEnabled: false"
+                wasd-controls="enabled: true; acceleration: 100"
+                position="0 1.6 0">
+        
+        <!-- Cursor para navegación web/VR -->
         <a-cursor 
           position="0 0 -1"
-          geometry="primitive: ring; radiusInner: 0.015; radiusOuter: 0.025"
-          material="color: #FFD700; shader: flat; opacity: 0.8"
-          animation__click="property: scale; startEvents: click; from: 0.1 0.1 0.1; to: 1.2 1.2 1.2; dur: 200"
-          animation__fusing="property: scale; startEvents: fusing; from: 1 1 1; to: 0.8 0.8 0.8; dur: 1500"
-          animation__mouseenter="property: material.color; to: #FF6B6B; startEvents: mouseenter; dur: 200"
-          animation__mouseleave="property: material.color; to: #FFD700; startEvents: mouseleave; dur: 200"
-          raycaster="objects: .clickable">
+          geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015"
+          material="color: #FFD700; shader: flat; opacity: 0.6"
+          animation__click="property: scale; startEvents: click; from: 0.8 0.8 0.8; to: 1.2 1.2 1.2; dur: 150"
+          animation__mouseenter="property: material.opacity; to: 1; startEvents: mouseenter; dur: 200"
+          animation__mouseleave="property: material.opacity; to: 0.6; startEvents: mouseleave; dur: 200"
+          raycaster="objects: .clickable; far: 20">
         </a-cursor>
       </a-camera>
     </a-scene>
@@ -325,7 +347,7 @@
           }
         });
 
-        // Controles de teclado
+        // Controles de teclado y gamepad
         document.addEventListener('keydown', function(event) {
           switch(event.key) {
             case '1':
@@ -347,8 +369,98 @@
           }
         });
 
+        // Control manual de la cámara con gamepad
+        const camera = document.querySelector('#camera');
+        let rotationX = 0;
+        let rotationY = 0;
+
+        function updateCameraRotation() {
+          // Verificar si hay gamepad conectado
+          const gamepads = navigator.getGamepads();
+          if (gamepads[0]) {
+            const gamepad = gamepads[0];
+            
+            // Stick derecho para controlar la vista (ejes 2 y 3)
+            const rightStickX = gamepad.axes[2] || 0;
+            const rightStickY = gamepad.axes[3] || 0;
+            
+            // Sensibilidad del movimiento
+            const sensitivity = 2;
+            
+            // Actualizar rotación si hay movimiento en el stick
+            if (Math.abs(rightStickX) > 0.1 || Math.abs(rightStickY) > 0.1) {
+              rotationY += rightStickX * sensitivity;
+              rotationX -= rightStickY * sensitivity;
+              
+              // Limitar rotación vertical
+              rotationX = Math.max(-90, Math.min(90, rotationX));
+              
+              // Aplicar rotación a la cámara
+              camera.setAttribute('rotation', `${rotationX} ${rotationY} 0`);
+            }
+            
+            // Botones del gamepad para navegación
+            if (gamepad.buttons[0] && gamepad.buttons[0].pressed) changeScene('sky1');
+            if (gamepad.buttons[1] && gamepad.buttons[1].pressed) changeScene('sky2');
+            if (gamepad.buttons[2] && gamepad.buttons[2].pressed) changeScene('sky3');
+            if (gamepad.buttons[3] && gamepad.buttons[3].pressed) changeScene('sky4');
+          }
+        }
+
+        // Controles de teclado para vista (WASD alternativo)
+        const keys = {};
+        document.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
+        document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+        function updateKeyboardCamera() {
+          const speed = 2;
+          
+          // Flechas o IJKL para controlar la vista
+          if (keys['arrowleft'] || keys['j']) {
+            rotationY -= speed;
+          }
+          if (keys['arrowright'] || keys['l']) {
+            rotationY += speed;
+          }
+          if (keys['arrowup'] || keys['i']) {
+            rotationX -= speed;
+          }
+          if (keys['arrowdown'] || keys['k']) {
+            rotationX += speed;
+          }
+          
+          // Limitar rotación vertical
+          rotationX = Math.max(-90, Math.min(90, rotationX));
+          
+          // Aplicar rotación si hay cambios
+          if (keys['arrowleft'] || keys['arrowright'] || keys['arrowup'] || keys['arrowdown'] ||
+              keys['j'] || keys['l'] || keys['i'] || keys['k']) {
+            camera.setAttribute('rotation', `${rotationX} ${rotationY} 0`);
+          }
+        }
+
+        // Loop de actualización para controles
+        function controlsLoop() {
+          updateCameraRotation();
+          updateKeyboardCamera();
+          requestAnimationFrame(controlsLoop);
+        }
+
         // Inicializar
         updateMenuIndicator();
+        
+        // Iniciar loop de controles
+        controlsLoop();
+        
+        // Instrucciones en consola
+        console.log('🎮 CONTROLES DISPONIBLES:');
+        console.log('📱 GAMEPAD/OCULUS:');
+        console.log('  - Stick derecho: Controlar vista');
+        console.log('  - A/X/Y/B: Cambiar escenas 1-4');
+        console.log('⌨️ TECLADO:');
+        console.log('  - Flechas o IJKL: Controlar vista');
+        console.log('  - Números 1-4: Cambiar escenas');
+        console.log('  - Espacio: Auto tour on/off');
       });
     </script>
   </body>
