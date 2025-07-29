@@ -22,7 +22,12 @@
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
   </head>
   <body>
-    <a-scene background="color: #000000" cursor="rayOrigin: mouse" vr-mode-ui="enabled: true">
+    <a-scene background="color: #000000" 
+             cursor="rayOrigin: mouse" 
+             vr-mode-ui="enabled: true"
+             webxr="requiredFeatures: local-floor; optionalFeatures: bounded-floor"
+             renderer="antialias: true; colorManagement: true"
+             loading-screen="dotsColor: #FFD700; backgroundColor: #000000">
       <!-- Assets -->
       <a-assets>
         <!-- Tus imágenes locales -->
@@ -53,12 +58,12 @@
       </a-plane>
 
       <!-- Título del menú -->
-      <a-text value="Patio Geologia" 
+      <a-text value="NAVEGACIÓN" 
               position="-4.5 2.5 -2.9" 
               rotation="0 20 0"
               align="center" 
               color="#FFD700" 
-              scale="0.4 0.4 0.4"
+              scale="1.2 1.2 1.2"
               font="kelsonsans">
       </a-text>
 
@@ -88,7 +93,7 @@
                 position="-0.9 0 0.01" 
                 align="left" 
                 color="#FFF" 
-                scale="0.4 0.4 0.4"
+                scale="1.2 1.2 1.2"
                 font="kelsonsans"
                 wrap-count="18">
         </a-text>
@@ -111,7 +116,7 @@
                 position="-0.9 0 0.01" 
                 align="left" 
                 color="#FFF" 
-                scale="0.4 0.4 0.4"
+                scale="1.2 1.2 1.2"
                 font="kelsonsans"
                 wrap-count="18">
         </a-text>
@@ -134,8 +139,7 @@
                 position="-0.9 0 0.01" 
                 align="left" 
                 color="#FFF" 
-                scale="0.4 0.4 0.4"
-
+                scale="1.2 1.2 1.2"
                 font="kelsonsans"
                 wrap-count="18">
         </a-text>
@@ -158,8 +162,7 @@
                 position="-0.9 0 0.01" 
                 align="left" 
                 color="#FFF" 
-                scale="0.4 0.4 0.4"
-
+                scale="1.2 1.2 1.2"
                 font="kelsonsans"
                 wrap-count="18">
         </a-text>
@@ -252,6 +255,22 @@
     </a-scene>
 
     <script>
+      // Verificación de compatibilidad WebXR para debugging
+      if ('xr' in navigator) {
+        navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
+          console.log('🥽 VR Support:', supported ? 'DISPONIBLE' : 'NO DISPONIBLE');
+          if (!supported) {
+            console.log('💡 Para activar VR en Oculus:');
+            console.log('1. Abre Oculus Browser (no Chrome/Firefox)');
+            console.log('2. Asegúrate de que WebXR esté habilitado');
+            console.log('3. O usa Meta Quest Browser');
+          }
+        });
+      } else {
+        console.log('❌ WebXR no disponible en este navegador');
+        console.log('💡 Usa Oculus Browser o Meta Quest Browser');
+      }
+
       document.addEventListener('DOMContentLoaded', function() {
         const sky = document.querySelector('#image-360');
         const title = document.querySelector('#scene-title');
@@ -451,6 +470,29 @@
         
         // Iniciar loop de controles
         controlsLoop();
+        
+        // Verificar VR después de que A-Frame se inicialice
+        setTimeout(() => {
+          const sceneEl = document.querySelector('a-scene');
+          if (sceneEl.is('vr-mode')) {
+            console.log('🎮 Modo VR detectado');
+          } else {
+            console.log('💻 Modo web activo');
+          }
+          
+          // Verificar si el botón VR está visible
+          const vrButton = document.querySelector('.a-enter-vr-button');
+          if (vrButton) {
+            console.log('✅ Botón VR encontrado');
+            vrButton.style.display = 'block';
+            vrButton.style.position = 'fixed';
+            vrButton.style.bottom = '20px';
+            vrButton.style.right = '20px';
+            vrButton.style.zIndex = '9999';
+          } else {
+            console.log('❌ Botón VR no encontrado - WebXR puede no estar disponible');
+          }
+        }, 2000);
         
         // Instrucciones en consola
         console.log('🎮 CONTROLES DISPONIBLES:');
